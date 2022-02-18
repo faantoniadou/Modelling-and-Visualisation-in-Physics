@@ -26,6 +26,7 @@ init_state = np.random.choice([-1, 1],size=(N, N))
 random_indx = np.random.randint(0, N, size=(255000*(N**2), 4))
 
 
+
 def total_energy(state):
     '''
     Calculates total energy of a state by summing product of all spin pairs
@@ -132,7 +133,31 @@ def kawasaki(indices, beta=1):
     return init_state
 
 
-def simulation(method, beta=1):
+def choose_rule():
+    '''
+    Chooses the correct chosen rule to proceed with the simulation
+        
+    Returns
+    -------
+    chosen rule
+        
+    '''
+
+    method = str(input("Dynamical rule ('g' for Glauber or 'k' for Kawasaki): "))
+    
+    if method=='k':
+        method = kawasaki
+    elif method =='g':
+        method = metropolis
+    else:
+        print("Invalid method. Please try again")
+    return method
+    
+# this stores the chosen dynamical rule
+rule = choose_rule()
+
+
+def simulation(method):
     '''
     Animated simulation of the Ising model
 
@@ -154,7 +179,6 @@ def simulation(method, beta=1):
     # set constants
     J = 1.0
     beta = float(input('Temperature: '))
-    kT = 1/beta
     
     nstep = 10000
 
@@ -179,22 +203,9 @@ def simulation(method, beta=1):
             plt.pause(0.0001)
 
 
-def run_sim():
-    '''
-    Runs simulation above according to method input
-    '''
-    
-    method = str(input("Dynamical rule ('g' for Glauber or 'k' for Kawasaki): "))
-    
-    if method=='k':
-        simulation(kawasaki)
-    elif method =='g':
-        simulation(metropolis)
-    else:
-        print("Invalid method. Please try again")
+simulation(rule)
         
 
-#run_sim()
 
 def equil_metr(method):
     '''
@@ -248,7 +259,7 @@ def equil_metr(method):
         m_avg = np.average(M_calc)
         e_avg = np.average(E_vals)
         
-        M_avg.append(m_avg)
+        M_avg.append(np.abs(m_avg))
         susc.append(1/(T*no_particles) * (np.var(M_calc)))
         E_array.append(e_avg)
         H_capacity.append(1/(T * no_particles) * (np.var(E_vals)))
@@ -267,14 +278,7 @@ def plot_quant():
     Plots desired quantities according to the method used.
     '''
     
-    method = str(input("Dynamical rule ('g' for Glauber or 'k' for Kawasaki): "))
-    
-    if method=='k':
-        M_avg, susc, E_array, H_capacity, M_errs, susc_errs, E_errs, H_errs = equil_metr(kawasaki)
-    elif method =='g':
-        M_avg, susc, E_array, H_capacity, M_errs, susc_errs, E_errs, H_errs = equil_metr(metropolis)
-    else:
-        print("Invalid method. Please try again")
+    M_avg, susc, E_array, H_capacity, M_errs, susc_errs, E_errs, H_errs = equil_metr(rule)
     
     kT_array = np.arange(1, 3.1, 0.1)
     
