@@ -271,7 +271,7 @@ def plot_quant():
     
     if method=='k':
         M_avg, susc, E_array, H_capacity, M_errs, susc_errs, E_errs, H_errs = equil_metr(kawasaki)
-    elif method =='m':
+    elif method =='g':
         M_avg, susc, E_array, H_capacity, M_errs, susc_errs, E_errs, H_errs = equil_metr(metropolis)
     else:
         print("Invalid method. Please try again")
