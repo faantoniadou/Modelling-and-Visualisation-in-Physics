@@ -16,7 +16,7 @@ from tqdm import tqdm
 # pseudo-random numbers to use in future functions
 N = int(input('Array size: '))
 
-# make results reproducable
+# make results reproducible
 np.random.seed(10)
 
 # initialise random state
