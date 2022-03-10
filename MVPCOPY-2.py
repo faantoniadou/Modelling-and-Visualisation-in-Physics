@@ -78,7 +78,6 @@ def metropolis(indices,beta=1):
     delta_E = (init_state[(i+1)%N, j] + init_state[i,(j+1)%N] + init_state[(i-1)%N, j] + \
         init_state[i,(j-1)%N]) * 2 * init_state[i,j]
     
-    #only 2 possible values for np.exp(sth) 8 or 4
     if delta_E <= 0:
         init_state[i,j] *= -1
 
