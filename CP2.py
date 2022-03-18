@@ -237,7 +237,37 @@ def plot_equil():
     plt.savefig('equil.png')
     plt.show()
     
+def centre_of_mass():
+    # set grid size
+    N = 100
 
+    # number of steps
+    nstep = 100
+
+    grid = np.zeros((N,N))
+    init_grid = glider(1, 1, grid)
+    #print(init_grid)
+    
+    nonZeroMasses = np.nonzero(init_grid)
+    com = np.array((np.average(nonZeroMasses[0]), np.average(nonZeroMasses[1])))
+    com_array = []
+    com_array.append(com.tolist())
+    
+    time = 0
+    times = []
+    times.append(time)
+    
+    for i in range(N*2):
+        time += 1
+        times.append(0)
+        new_grid = move(init_grid, N)
+        nonZeroMasses_new = np.nonzero(new_grid)[1:3]
+        
+        #print(nonZeroMasses_new)
+        com = np.array((np.average(nonZeroMasses_new[0]), np.average(nonZeroMasses_new[1])))
+        com_array.append(com.tolist())
+        #delta_com = (com_array[i-1]%N - com_array[i]%N)
+    print(np.array(com_array))
 
  # call main
 if __name__ == '__main__':
