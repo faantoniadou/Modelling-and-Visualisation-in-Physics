@@ -60,7 +60,7 @@ def simulation(animate=False):
 
             plt.cla()   
             plt.title(step)
-            im = plt.imshow(grid, vmax=1, vmin=-1, animated=True, interpolation='bilinear', cmap='plasma')
+            im = plt.imshow(grid, animated=True, cmap='plasma')
             plt.draw()
             plt.pause(0.0001)
             
