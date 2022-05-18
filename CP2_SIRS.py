@@ -65,7 +65,6 @@ def selection(grid, p1, p2, p3):
     times_updated = 0
     
     if grid[i ,j] == S:
-        # if life_array[i,j] >= I :
         if (grid[(i+1)%N,j] == I or grid[(i-1)%N,j] == I or grid[i,(j-1)%N] == I or grid[i,(j+1)%N] == I):
             if p1 > r:
                 grid[i, j] = I
@@ -100,7 +99,7 @@ def simulation():
         p1, p2, p3 = 0.5, 0.6, 0.1
         
     elif behaviour == 'D':
-        p1, p2, p3 = 0.5, 0.5, 0.5
+        p1, p2, p3 = 0.7, 0.7, 0.7
         
     elif behaviour == 'C':
         p1, p2, p3 = 0.8, 0.1, 0.01
@@ -129,19 +128,16 @@ def simulation():
         plt.pause(0.0001)
 
 
-#%%
-#%%
-
 def phase(start_p1, start_p3, end_p1, end_p3, no_points1, no_points3, sweeps):
     
     nstep = sweeps + 101
     p1_array = np.linspace(start_p1, end_p1, no_points1)
     p3_array = np.linspace(start_p3, end_p3, no_points3)
     
+    # create grid of probabilities
     probs = [(p1, p3) for p1 in p1_array for p3 in p3_array]
-    print(len(probs))
-    #initialise spins randomly
-        
+    np.savetxt(f'probs.csv', probs, delimiter=',')
+    
     avg_infected = []
     I_var = []
     I_errs = []
@@ -174,14 +170,14 @@ def phase(start_p1, start_p3, end_p1, end_p3, no_points1, no_points3, sweeps):
         I_var.append(np.var(no_infected))
     
     avg_infected = np.array(avg_infected)/N**2
-
-    print(len(I_errs))
+    I_errs = np.array(I_errs)/N**2
     
     np.savetxt(f'infected_{N}.csv', avg_infected, delimiter=',')
     np.savetxt(f'variance_{N}.csv', np.array(I_var), delimiter=',')
-    np.savetxt(f'errors_{N}.csv', np.array(I_errs), delimiter=',')
+    np.savetxt(f'errors_{N}.csv', I_errs, delimiter=',')
         
     return avg_infected, np.array(I_var), p1_array, p3_array, np.array(I_errs)
+
 
 
 def plot_inf():
@@ -206,6 +202,7 @@ def plot_var():
 
     fig = plt.figure()
     ax1 = plt.contourf(xx,yy,I_var.reshape((len(p1_array),len(p3_array))))
+    cbar = ax1.colorbar()
     
     plt.savefig(f'var_plot_{N}.png')
     plt.show()
@@ -222,6 +219,7 @@ def trimmed_plot():
     plt.ylabel('Variance of the number of infected sites')
     plt.savefig(f'trimmed_var_plot_{N}.png')
     plt.show()
+    
     
     
 def fIm_plot(sweeps):
@@ -257,15 +255,15 @@ def fIm_plot(sweeps):
             avg_infected_single.append(np.mean(no_infected))
         
         # estimate errors using the standard error for the mean
-        I_errs.append(np.var(no_infected)/np.sqrt(5))
+        I_errs.append(np.std(no_infected)/np.sqrt(5))
         avg_infected.append(np.mean(avg_infected_single))
         
     avg_infected = np.array(avg_infected)/N**2
+    I_errs = np.array(I_errs)/N**2
 
-    
     np.savetxt(f'infected_{N}_fIm.csv', avg_infected, delimiter=',')
     np.savetxt(f'fIm_array{N}_fIm.csv', fIm_array, delimiter=',')
-    np.savetxt(f'errors_{N}_fIm.csv', np.array(I_errs), delimiter=',')
+    np.savetxt(f'errors_{N}_fIm.csv', I_errs, delimiter=',')
 
     plt.plot(fIm_array, avg_infected)
     plt.errorbar(fIm_array, avg_infected, yerr=I_errs, fmt='x', ecolor = 'lightblue',color='m')
@@ -276,12 +274,12 @@ def fIm_plot(sweeps):
     
 
 
- # call main
+# call main
 if __name__ == '__main__':
-    # move(random_state(50), 50)
-    # simulation()
-    # phase()
-    # plot_inf()
-    # plot_var()
-    # trimmed_plot()
-    fIm_plot(10000)
+    move(random_state(50), 50)
+    simulation()
+    phase()
+    plot_inf()
+    plot_var()
+    trimmed_plot()
+    fIm_plot(1000)
