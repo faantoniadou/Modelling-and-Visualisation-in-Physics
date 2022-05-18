@@ -10,6 +10,7 @@ from numpy.random import rand
 import random
 from numpy import savetxt
 import argparse
+from scipy.ndimage import convolve
 
 
 
@@ -21,13 +22,6 @@ from tqdm import tqdm
 
 parser = argparse.ArgumentParser(description="Game of Life simulation.")
 
-#N = int(input('Lattice size: '))
-#state = str(input('Choose between a random (r) initial condition and one in a set of selected (s) initial conditions'))
-
-# make results reproducible
-#np.random.seed(10)
-
-
 # setting up the values for the grid
 ON = 1
 OFF = 0
@@ -37,7 +31,7 @@ vals = [ON, OFF]
 # Command line args are in sys.argv[1], sys.argv[2] ..
 # sys.argv[0] is the script name itself and can be ignored
 # parse arguments
-# example: python3 MVP_CP2.py --grid-size 100 --interval 10 --random
+# example: python3 CP2_v2.py --grid-size 100 --interval 10 --random
 
 # add arguments
 parser.add_argument('--grid-size', dest='N', required=False)
@@ -60,7 +54,7 @@ def random_state(N):
     '''
     returns a grid of NxN random values
     '''
-    return np.random.choice(vals, size=(N,N))#, p=[0.2, 0.8])
+    return np.random.choice(vals, size=(N,N))
     
     
 
@@ -72,7 +66,7 @@ def glider(i, j, grid):
                        [ON,  ON,  ON]])
     grid[i:i+3, j:j+3] = glider
 
-    #return grid[i:i+3, j:j+3]
+    return grid
 
 
 
@@ -83,7 +77,7 @@ def oscillator(i, j, grid):
                        [OFF,  ON, OFF]])
     grid[i:i+3, j:j+3] = glider
 
-    #return grid[i:i+3, j:j+3]
+    return grid
 
 
 
@@ -94,31 +88,22 @@ def selection(frameNum, img, grid, N):
     Any live cell with more than 3 live neighbours dies.
     Any dead cell with exactly 3 live neighbours becomes alive.
     '''
-    life = 0
     new_grid = grid.copy()
-    # loop through the lattice to determine living neighbours 
-    for i in range(N):
-        for j in range(N):
-            # compute 8-neighbor sum
-            life = int((grid[i, (j-1)%N] + grid[i, (j+1)%N] +
-                        grid[(i-1)%N, j] + grid[(i+1)%N, j] +
-                        grid[(i-1)%N, (j-1)%N] + grid[(i-1)%N, (j+1)%N] +
-                        grid[(i+1)%N, (j-1)%N] + grid[(i+1)%N, (j+1)%N])/ON)
-            
-            if grid[i,j] == ON:     # if cell is live
-                if (life < 2) or (life > 3):
-                    new_grid[i,j] = OFF
-                
-            else:       # if cell is dead
-                if life == 3:
-                    new_grid[i,j] = ON
-    # # update data
-    # grid[:] = new_grid[:]
-    # return grid
-    # update data
+    
+    padded_grid = np.pad(grid, pad_width=1, mode='wrap')
+    kernel = np.array([[1, 1, 1],[1, 0, 1],[1, 1, 1]])                      # for convolution
+    life_array = convolve(padded_grid, kernel, mode='constant') [1:-1, 1:-1]        # array containing sum of neighbours
+    
+    #new_grid[np.where((new_grid==1) & ((life_array==2) | (life_array == 3)))] = ON
+    
+    new_grid[np.where((new_grid==1) & (life_array <2))] = 0
+    new_grid[np.where((new_grid==1) & (life_array >3))] = 0
+    new_grid[np.where((new_grid==0) & (life_array==3))] = 1
+
     img.set_data(new_grid)
     grid[:] = new_grid[:]
-    return img,
+    
+    return img
 
 
 
@@ -129,27 +114,21 @@ def move(grid, N):
     Any live cell with more than 3 live neighbours dies.
     Any dead cell with exactly 3 live neighbours becomes alive.
     '''
-    life = 0
     new_grid = grid.copy()
-    # loop through the lattice to determine living neighbours 
-    for i in range(N):
-        for j in range(N):
-            # compute 8-neighbor sum
-            life = int((grid[i, (j-1)%N] + grid[i, (j+1)%N] +
-                        grid[(i-1)%N, j] + grid[(i+1)%N, j] +
-                        grid[(i-1)%N, (j-1)%N] + grid[(i-1)%N, (j+1)%N] +
-                        grid[(i+1)%N, (j-1)%N] + grid[(i+1)%N, (j+1)%N])/ON)
-            
-            if grid[i,j] == ON:     # if cell is live
-                if (life < 2) or (life > 3):
-                    new_grid[i,j] = OFF
-                
-            else:       # if cell is dead
-                if life == 3:
-                    new_grid[i,j] = ON
-
+    
+    padded_grid = np.pad(grid, pad_width=1, mode='wrap')
+    kernel = np.array([[1, 1, 1],[1, 0, 1],[1, 1, 1]])                      # for convolution
+    life_array = convolve(padded_grid, kernel, mode='constant') [1:-1,1:-1]        # array containing sum of neighbours
+    
+    #new_grid[np.where((new_grid==1) & ((life_array==2) | (life_array == 3)))] = ON
+    
+    new_grid[np.where((new_grid==1) & (life_array <2))] = 0
+    new_grid[np.where((new_grid==1) & (life_array >3))] = 0
+    new_grid[np.where((new_grid==0) & (life_array==3))] = 1
+    
     grid[:] = new_grid[:]
-    return grid,
+    
+    return grid
 
     
 
@@ -170,15 +149,14 @@ def simulation():
  
     # check if "glider" demo flag is specified
     if args.glider:
-        grid = np.zeros(N*N).reshape(N, N)
+        grid = np.zeros((N, N))
         glider(1, 1, grid)
 
     elif args.oscillator:
-        grid = np.zeros(N*N).reshape(N, N)
+        grid = np.zeros((N, N))
         oscillator(int(N/2), int(N/2), grid)
  
-    elif args.random:   # populate grid with random on/off -
-            # more off than on
+    elif args.random:   # populate grid with random on/off
         grid = random_state(N)
 
     # set up animation
@@ -187,12 +165,11 @@ def simulation():
     ani = animation.FuncAnimation(fig, selection, fargs=(img, grid, N, ),
                                   frames = 10,
                                   interval=updateInterval,
-                                  save_count=50)
+                                  save_count=50, blit=True)
  
-    # # of frames?
     # set output file
     if args.movfile:
-        ani.save(args.movfile, fps=30, extra_args=['-vcodec', 'libx264'])
+        ani.save(args.movfile, fps=10, extra_args=['-vcodec', 'libx264'])
  
     plt.show()
 
@@ -209,138 +186,80 @@ def equil():
 
     # number of steps
     nstep = 10000
-
-    # set number of 
-    
+        
     t_equil = []
     
-    for i in range(N_sim):
+    for i in tqdm(range(N_sim)):
         active_sites = []
         init_grid = random_state(N)
         
-        for n in tqdm(range(nstep)):
+        for n in (range(nstep)):
             new_grid = move(init_grid, N)
             active_sites.append(np.sum(new_grid))
             
             #if n >= 1000:
             if n>100 and np.all((active_sites[n-100:n] == active_sites[n])) == True:
                 t_equil.append(n)
-                print(n)
                 break
+            
     np.savetxt('equiltimes.csv', t_equil, delimiter=',')
                 
     return t_equil
+
+
 
 def plot_equil():
     t_equil = equil()
     plt.hist(t_equil, 20)
     plt.savefig('equil.png')
     plt.show()
-    
+
+
+
 def centre_of_mass():
-    # set grid size
-    N = 100
-
+        
     # number of steps
-    nstep = 100
-
-    grid = np.zeros((N,N))
+    if args.N and int(args.N) > 8:
+        N = int(args.N)
+    else: N = int(input('Lattice size: '))
+        
+    
+    grid = np.zeros((N, N))
     init_grid = glider(1, 1, grid)
-    #print(init_grid)
     
     nonZeroMasses = np.nonzero(init_grid)
     com = np.array((np.average(nonZeroMasses[0]), np.average(nonZeroMasses[1])))
+    
     com_array = []
     com_array.append(com.tolist())
-    
+
     time = 0
     times = []
-    times.append(time)
+    
+    dists = []
     
     for i in range(N*2):
+        times.append(time)
         time += 1
-        times.append(0)
         new_grid = move(init_grid, N)
-        nonZeroMasses_new = np.nonzero(new_grid)[1:3]
-        
-        #print(nonZeroMasses_new)
+
+        nonZeroMasses_new = np.nonzero(new_grid)
         com = np.array((np.average(nonZeroMasses_new[0]), np.average(nonZeroMasses_new[1])))
         com_array.append(com.tolist())
-        #delta_com = (com_array[i-1]%N - com_array[i]%N)
-    print(np.array(com_array))
-
- # call main
+        dists.append(np.linalg.norm(com))
+    
+    plt.plot(times, dists/times)
+    np.savetxt('speed.csv', dists, delimiter=',')
+    plt.xlabel('Time')
+    plt.ylabel('CoM distance from origin')
+    plt.title('Distance of the CoM from the origin against time')
+    plt.show()
+    
+    
+    
+# call main
 if __name__ == '__main__':
+    simulation()
     equil()
     plot_equil()
-
-
-
-
-
-# def state(N):
-#     state = str(input('Select between random state ("r"), glider ("g"), and oscillator ("o"): '))
-
-#     if state == 'r':
-#         state = random_state(N)
-    
-#     elif state == 'g':
-#         state = glider()
-#     elif state == 'o':
-    
-#     else:
-#         print('Please select a valid state')
-#         state == state(N)
-
-# def create_state():
-#     state = str(input('Choose state ("g" for glider, "r" for random and "o" for oscillator: '))
-
-#     if state == "r":
-#         state = random_state()                   
-        
-
-# def simulation(method):
-#     '''
-#     Animated simulation of the Game of Life
-    
-#     Parameters
-#     ----------
-#     method : string
-#         method to use to move through spins and flip (or not)
-    
-#     beta: float
-#         beta = 1/kT
-        
-#     Returns
-#     -------
-#     animated simulation
-        
-#     '''
-#     # declare grid
-#     grid = np.array([])
-    
-    
-#     nstep = 10000
-
-#     #initialise spins randomly
-#     state = init_state.copy()
-
-#     fig = plt.figure()
-#     im = plt.imshow(state, animated=True)
-
-#     for n in tqdm(range(nstep)):
-#         for l in range(N**2):
-#             indices = random_indx[l + N**2 * n]
-#             state = method(indices, beta=beta)
-        
-#         #occasionally plot or update measurements, eg every 10 sweeps
-#         if(n%10==0):
-            
-#             plt.cla()
-#             plt.title(n)
-#             im = plt.imshow(state, animated=True)
-#             plt.draw()
-#             plt.pause(0.0001)
-
-
-# main() function
+    centre_of_mass()
